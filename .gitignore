@@ -1,10 +1,11 @@
-@"
 node_modules/
 dist/
 bin/
+*.exe
+*.zip
+*.dat
 .auracloud_data/
 .env
 .env.*
 !.env.example
 *.log
-"@ | Set-Content .gitignore

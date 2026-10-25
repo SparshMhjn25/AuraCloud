@@ -133,7 +133,7 @@ cd AuraCloud
 npm install
 ```
 
-Check the scripts available in `package.json` and use the appropriate startup command for the desired runtime mode.
+Build and start the complete Node.js application and Go sidecar with `npm run start:hybrid`. The dashboard is served at `http://127.0.0.1:3000`. On Windows, `./scripts/run.ps1` installs dependencies, builds the sidecar to `bin/aura-engine.exe`, compiles TypeScript, and launches AuraCloud. On Linux/macOS, use `./scripts/run.sh`.
 
 Peer networking requires the relevant Tailscale configuration. Keep authentication credentials and encryption keys out of source control.
 
@@ -159,23 +159,19 @@ Verification should cover:
 
 ## Project Structure
 
-The repository contains the application source, frontend assets, networking integration, scripts, and project configuration.
-
-Key files and directories include:
-
 | Path | Purpose |
 |---|---|
-| `src/` | Application source |
-| `web/` | Dashboard assets |
-| `scripts/` | Project scripts |
-| `cmd/` | Command-line or executable components |
-| `pkg/` | Supporting packages, where applicable |
-| `main.go` | Go networking or runtime entry point |
-| `go.mod` / `go.sum` | Go module configuration |
-| `package.json` | Node.js scripts and dependencies |
+| `src/` | TypeScript application, API, SQLite database, and replication workers |
+| `web/index.html` | Dashboard served by Fastify |
+| `cmd/aura-engine/` | Minimal Go `tsnet` sidecar and localhost control API |
+| `scripts/` | Cross-platform sidecar build and launch scripts |
+| `package.json` | Node.js dependencies and build/run commands |
+| `go.mod` / `go.sum` | Go sidecar dependency configuration |
 | `tsconfig.json` | TypeScript compiler configuration |
 
+The Go source is limited to `cmd/aura-engine/`; all application orchestration and metadata logic lives in TypeScript.
 ## Demo
 
 A demonstration video will be added here to show the application interface and actual storage and replication workflows.
+
 
