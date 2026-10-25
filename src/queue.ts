@@ -1,6 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { db, statements } from './db.js';
 import { engineFetch } from './processManager.js';
+import { readEncryptedChunk } from './chunks.js';
 
 const concurrency = 3;
 let stopped = false;
@@ -8,9 +9,14 @@ async function transfer(job: any) {
   const claimed = statements.claim.run(new Date().toISOString(), job.id);
   if (!claimed.changes) return;
   try {
-    const response = await engineFetch('/engine/peers/replicate', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ cid: job.chunk_cid, peer: job.peer_ip }), signal: AbortSignal.timeout(100_000),
+    const encrypted = await readEncryptedChunk(job.chunk_cid);
+    const response = await engineFetch('/proxy/send-to-peer', {
+      method: 'POST', headers: {
+        'content-type': 'application/octet-stream',
+        'x-auracloud-cid': job.chunk_cid,
+        'x-auracloud-peer': job.peer_ip,
+      },
+      body: encrypted, signal: AbortSignal.timeout(130_000),
     });
     if (!response.ok) throw new Error(await response.text());
     statements.done.run(new Date().toISOString(), job.id);

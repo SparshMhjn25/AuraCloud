@@ -61,7 +61,7 @@ Replication work is persisted so that pending tasks can be recovered after inter
 
 ### Networking Layer
 
-A Go sidecar integrates Tailscale's `tsnet` networking capabilities to support connectivity between authorized peers without requiring manually configured public IP addresses or port forwarding.
+A Go sidecar integrates Tailscale's `tsnet` networking capabilities to support connectivity between authorized peers without requiring manually configured public IP addresses or port forwarding. It only forwards raw encrypted chunk streams: incoming mesh payloads go to Node's authenticated internal receiver, and Node sends local payloads to Go's loopback proxy for delivery over `tsnet`. Chunk slicing, CID generation, encryption, decryption, verification, and all chunk-file reads and writes are implemented in Node.js.
 
 ## Technology Stack
 

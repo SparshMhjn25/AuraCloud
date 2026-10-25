@@ -5,13 +5,19 @@ import { randomBytes } from 'node:crypto';
 const base = process.env.AURA_ENGINE_URL ?? 'http://127.0.0.1:9091';
 let child: ChildProcess | undefined;
 const token = randomBytes(32).toString('hex');
+export const engineToken = token;
 type EngineFetchInit = Omit<RequestInit, 'body'> & {
   body?: RequestInit['body'] | Uint8Array | null;
 };
 export async function startEngine() {
   const defaultBinary = process.platform === 'win32' ? './bin/aura-engine.exe' : './bin/aura-engine';
   const binary = process.env.AURA_ENGINE_BIN ?? defaultBinary;
-  child = spawn(binary, [], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, AURA_ENGINE_TOKEN: token } });
+  const port = process.env.PORT ?? '3000';
+  child = spawn(binary, [], { stdio: ['ignore', 'pipe', 'pipe'], env: {
+    ...process.env,
+    AURA_ENGINE_TOKEN: token,
+    AURA_NODE_URL: process.env.AURA_NODE_URL ?? `http://127.0.0.1:${port}`,
+  } });
   child.stdout?.on('data', (b) => process.stdout.write(`[aura-engine] ${b}`));
   child.stderr?.on('data', (b) => process.stderr.write(`[aura-engine] ${b}`));
   child.on('exit', (code, signal) => console.error(`[aura-engine] exited code=${code} signal=${signal}`));
