@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraCloud - P2P Encrypted Backup Dashboard</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            aura: {
+              900: '#050505',
+              800: '#090909',
+              700: '#111113',
+              600: '#18181b',
+              accent: '#22c55e',
+              cyan: '#67e8f9',
+              emerald: '#34d399',
+              rose: '#fb7185'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: #050505;
+      min-height: 100vh;
+    }
+    .mesh-grid {
+      background-image: linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+    .glass-panel {
+      background: rgba(12, 12, 13, 0.96);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: 1px solid #29292d;
+      box-shadow: 0 20px 42px rgba(0, 0, 0, 0.26);
+    }
+    .glass-card {
+      background: #111113;
+      border: 1px solid #29292d;
+    }
+    .glow-cyan {
+      box-shadow: 0 0 24px -7px rgba(103, 232, 249, 0.42);
+    }
+    .glow-indigo {
+      box-shadow: 0 0 24px -7px rgba(34, 197, 94, 0.32);
+    }
+    .stat-card { position: relative; overflow: hidden; transition: transform 180ms ease, border-color 180ms ease, background 180ms ease; }
+    .stat-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: #22c55e; opacity: .85; }
+    .stat-card:nth-child(2)::before { background: #67e8f9; }
+    .stat-card:nth-child(3)::before { background: #a78bfa; }
+    .stat-card:nth-child(4)::before { background: #facc15; }
+    .stat-card:hover { transform: translateY(-2px); border-color: #494950; background: #141416; }
+    .focus-ring:focus-visible { outline: 2px solid #67e8f9; outline-offset: 3px; }
+    .ops-label { color: #71717a; font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+    .console-line { height: 1px; background: linear-gradient(90deg, #22c55e, rgba(34,197,94,.12), transparent); }
+    .command-hero { background: linear-gradient(105deg, #101011 0%, #0b0b0c 58%, #080808 100%); border: 1px solid #2c2c30; box-shadow: 0 22px 48px rgba(0,0,0,.28); }
+    .command-hero::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 38%; opacity: .55; background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(255,255,255,.026) 10px 11px); pointer-events: none; }
+    #file-table-body tr { border-color: #242428; }
+    #file-table-body tr:hover { background: #171719 !important; }
+    input[type="search"] { background: #080809 !important; border-color: #333338 !important; }
+    #dropzone { background: #09090a !important; border-color: #3f3f46 !important; }
+    #dropzone:hover { background: #111113 !important; border-color: #34d399 !important; }
+    #upload-progress-container, #file-table-body + * { background: #0a0a0b; }
+    .glass-panel .bg-slate-900\/50, .glass-panel .bg-slate-900\/60, .glass-panel .bg-slate-900\/70 { background: #09090a !important; border-color: #29292d !important; }
+    .glass-panel .border-slate-800, .glass-panel .border-slate-800\/60 { border-color: #29292d !important; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.4);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.7);
+    }
+  </style>
+</head>
+<body class="mesh-grid text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white pb-12">
+
+  <!-- TOP NAVBAR -->
+  <header class="sticky top-0 z-50 border-b border-zinc-800 bg-black/95 px-6 py-3 mb-8 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl border border-emerald-400/60 bg-emerald-400/10 shadow-lg glow-indigo flex items-center justify-center">
+          <div class="h-full w-full bg-zinc-950 rounded-[10px] flex items-center justify-center">
+            <svg class="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 001-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"></path>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold text-white tracking-tight">AuraCloud</h1>
+            <span class="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-sm bg-emerald-400/10 text-emerald-300 border border-emerald-400/25">Phase 2</span>
+          </div>
+          <p class="text-xs text-slate-400">Encrypted Zero-Knowledge P2P Backup Engine</p>
+        </div>
+      </div>
+
+      <!-- Node Status Quick Badge -->
+      <div class="flex items-center gap-4">
+        <div id="top-status-badge" aria-live="polite" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-xs">
+          <span id="top-status-text" class="text-zinc-300 font-medium">⚪ Local Vault Mode (Offline)</span>
+        </div>
+        <button onclick="refreshDashboard()" aria-label="Refresh dashboard" class="focus-ring p-2 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-slate-300 hover:text-white transition-all">
+          <svg id="refresh-spinner" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6">
+
+    <!-- COMMAND CENTER INTRO -->
+    <section class="command-hero relative overflow-hidden rounded-2xl px-6 py-6 sm:px-8 sm:py-7 mb-5">
+      <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p class="ops-label text-emerald-400">Backup operations console</p>
+          <h2 class="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-white">Private backup, observable delivery.</h2>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">Every upload is encrypted locally, registered atomically, and—when mesh mode is enabled—delivered through a resumable peer queue.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-x-7 gap-y-3 text-sm sm:min-w-[290px]">
+          <div><p class="ops-label">Encryption</p><p class="mt-1 font-medium text-zinc-200">AES-256-GCM</p></div>
+          <div><p class="ops-label">Delivery</p><p class="mt-1 font-medium text-zinc-200">3 parallel workers</p></div>
+        </div>
+      </div>
+      <div class="relative z-10 console-line mt-6"></div>
+    </section>
+
+    <!-- METRICS & STATUS GRID -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+      
+      <!-- STAT 1: Registered Files -->
+      <div class="stat-card glass-panel p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Stored Files</p>
+          <h3 id="stat-files-count" class="text-2xl font-extrabold text-white mt-1">--</h3>
+        </div>
+        <div class="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+      </div>
+
+      <!-- STAT 2: Total Encrypted Storage -->
+      <div class="stat-card glass-panel p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Encrypted Volume</p>
+          <h3 id="stat-total-size" class="text-2xl font-extrabold text-white mt-1">--</h3>
+        </div>
+        <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+      </div>
+
+      <!-- STAT 3: Durable Peer Delivery -->
+      <div class="stat-card glass-panel p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Peer Delivery</p>
+          <h3 id="stat-sync-status" class="text-lg font-bold text-slate-200 mt-1">Checking...</h3>
+          <p id="stat-sync-detail" class="text-xs text-slate-500 mt-1">Store-and-forward queue</p>
+        </div>
+        <div class="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m-4 4h10m3 0a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h12a2 2 0 012 2v8z"/></svg>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- NODE STATUS PANEL -->
+    <section class="glass-panel p-6 rounded-2xl border border-slate-800/80 mb-8">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <h2 class="text-base font-semibold text-white">Tailscale Mesh Node Status</h2>
+        </div>
+        <span id="node-mode-pill" class="text-xs px-2.5 py-1 rounded-full font-medium bg-slate-800 text-slate-300">Fetching...</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800/60">
+          <p class="text-xs text-slate-400">Node Hostname</p>
+          <p id="node-hostname" class="font-medium text-slate-200 mt-0.5">--</p>
+        </div>
+        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800/60">
+          <p class="text-xs text-slate-400">P2P Mesh Mode</p>
+          <p id="node-mesh-enabled" class="font-medium text-slate-200 mt-0.5">--</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILE UPLOAD DROPZONE -->
+    <section class="glass-panel p-6 rounded-2xl border border-slate-800/80 mb-8">
+      <h2 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
+        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+        </svg>
+        Chunk & Encrypt New File (AES-256-GCM)
+      </h2>
+
+      <!-- Dropzone Container -->
+      <div 
+        id="dropzone"
+        class="border-2 border-dashed border-slate-700/70 hover:border-indigo-500/80 rounded-xl p-8 text-center transition-all bg-slate-900/40 hover:bg-slate-900/70 cursor-pointer group"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
+        ondrop="handleDrop(event)"
+      >
+        <input type="file" id="file-input" class="hidden" onchange="handleFileSelect(event)">
+        <div class="flex flex-col items-center justify-center gap-3">
+          <div class="p-3 rounded-full bg-slate-800/80 group-hover:bg-indigo-600/20 text-slate-400 group-hover:text-indigo-400 transition-all border border-slate-700/50">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-200">
+              <span class="text-indigo-400 underline decoration-indigo-500/50 underline-offset-2">Click to select a file</span> or drag & drop here
+            </p>
+            <p class="text-xs text-slate-400 mt-1">2 MiB chunks · AES-256-GCM · local manifest · resumable mesh delivery</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Upload Progress / Info Container -->
+      <div id="upload-progress-container" class="hidden mt-4 bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+        <div class="flex items-center justify-between text-xs mb-2">
+          <span id="upload-filename" class="font-medium text-slate-200">filename.dat</span>
+          <span id="upload-status" class="text-indigo-400 font-semibold">Encrypting & Chunking...</span>
+        </div>
+        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+          <div id="upload-bar" class="bg-gradient-to-r from-indigo-500 to-cyan-400 h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE FILE EXPLORER TABLE -->
+    <section class="glass-panel p-6 rounded-2xl border border-slate-800/80">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+          </svg>
+          <h2 class="text-base font-semibold text-white">Live Encrypted File Explorer</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="sr-only" for="file-filter">Filter encrypted files</label>
+          <input id="file-filter" type="search" placeholder="Filter files…" oninput="applyFileFilter()" class="focus-ring w-40 sm:w-48 rounded-lg border border-slate-700/70 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200 placeholder:text-slate-500" />
+          <span id="file-count-badge" class="whitespace-nowrap text-xs px-2.5 py-1 rounded-full font-medium bg-slate-800 text-slate-400">0 Files</span>
+        </div>
+      </div>
+
+      <!-- File Table Container -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-300">
+          <thead class="text-xs uppercase bg-slate-900/60 text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="py-3 px-4 font-semibold">File Name</th>
+              <th class="py-3 px-4 font-semibold">File ID</th>
+              <th class="py-3 px-4 font-semibold">Size</th>
+              <th class="py-3 px-4 font-semibold">Chunks</th>
+              <th class="py-3 px-4 font-semibold">Registered Date</th>
+              <th class="py-3 px-4 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="file-table-body" class="divide-y divide-slate-800/60">
+            <!-- Dynamic rows will be inserted here -->
+            <tr>
+              <td colspan="6" class="py-8 text-center text-slate-500">Loading files from SQLite DB...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" aria-live="polite" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- DASHBOARD LOGIC (VANILLA JS) -->
+  <script>
+    const API_BASE = "";
+    let dashboardFiles = [];
+
+    // Format Bytes
+    function formatBytes(bytes, decimals = 2) {
+      if (!bytes || bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // Toast Notifications
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let bg = 'bg-slate-900 border-indigo-500/50 text-indigo-300';
+      if (type === 'success') bg = 'bg-slate-900 border-emerald-500/50 text-emerald-300';
+      if (type === 'error') bg = 'bg-slate-900 border-rose-500/50 text-rose-300';
+
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl text-xs font-medium flex items-center gap-2 transition-all duration-300 opacity-0 translate-y-2 ${bg}`;
+      toast.innerHTML = `<span>${message}</span>`;
+      
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Keep server-provided file names out of HTML/attribute contexts.
+    function escapeHTML(value) {
+      const element = document.createElement('div');
+      element.textContent = value == null ? '' : String(value);
+      return element.innerHTML;
+    }
+
+    // Refresh Dashboard Data
+    async function refreshDashboard() {
+      const spinner = document.getElementById('refresh-spinner');
+      spinner.classList.add('animate-spin');
+
+      await Promise.all([fetchNodeStatus(), fetchSyncStatus(), fetchFileList()]);
+
+      setTimeout(() => {
+        spinner.classList.remove('animate-spin');
+      }, 500);
+    }
+
+    // Fetch Node Mesh Status
+    async function fetchNodeStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/node/status`);
+        if (!res.ok) throw new Error("Failed to fetch node status");
+        const status = await res.json();
+
+        // Update Node Panel
+        document.getElementById('node-hostname').textContent = status.hostname || 'localhost';
+        document.getElementById('node-mesh-enabled').textContent = status.mesh_enabled ? 'Active WireGuard Mesh' : 'Disabled (Local-Only)';
+
+        const modePill = document.getElementById('node-mode-pill');
+        if (status.mesh_enabled) {
+          modePill.textContent = "TAILSCALE P2P MESH";
+          modePill.className = "text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+        } else {
+          modePill.textContent = "LOCAL TCP SERVER";
+          modePill.className = "text-xs px-2.5 py-1 rounded-full font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30";
+        }
+
+      } catch (err) {
+        console.error("Node status error:", err);
+      }
+    }
+
+    // Fetch live Phase 2 queue state and peer reachability. The backend only
+    // reports peers whose /api/v1/health check answered over tsnet.
+    async function fetchSyncStatus() {
+      const badge = document.getElementById('top-status-badge');
+      const badgeText = document.getElementById('top-status-text');
+      const syncStatus = document.getElementById('stat-sync-status');
+      const syncDetail = document.getElementById('stat-sync-detail');
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/sync/status`);
+        if (!res.ok) throw new Error('Failed to fetch sync status');
+        const status = await res.json();
+        const pending = Number(status.pending_chunks || 0);
+        const peers = Number(status.peers_online || 0);
+
+        if (!status.mesh_enabled) {
+          badgeText.textContent = '⚪ Local Vault Mode (Offline)';
+          badge.className = 'hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-xs';
+          badgeText.className = 'text-zinc-300 font-medium';
+        } else if (peers === 0) {
+          badgeText.textContent = '🟡 Mesh Active: 0 Peers Online';
+          badge.className = 'hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-400/10 border border-amber-400/35 text-xs';
+          badgeText.className = 'text-amber-200 font-medium';
+        } else {
+          badgeText.textContent = `🟢 Mesh Active: ${peers} ${peers === 1 ? 'Peer' : 'Peers'} Connected`;
+          badge.className = 'hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-400/10 border border-emerald-400/35 text-xs';
+          badgeText.className = 'text-emerald-200 font-medium';
+        }
+
+        syncStatus.textContent = `Sync Queue: ${pending} Pending Chunks`;
+        if (pending > 0) {
+          syncStatus.className = 'text-lg font-bold text-amber-200 mt-1';
+          syncDetail.textContent = 'Auto-retrying across 3 workers...';
+          syncDetail.className = 'text-xs text-amber-300 mt-1 animate-pulse';
+        } else {
+          syncStatus.className = 'text-lg font-bold text-emerald-300 mt-1';
+          syncDetail.textContent = 'All Chunks Replicated (In Sync)';
+          syncDetail.className = 'text-xs text-emerald-400 mt-1';
+        }
+      } catch (err) {
+        console.error('Sync status error:', err);
+        badgeText.textContent = '⚪ Local Vault Mode (Offline)';
+        badge.className = 'hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-xs';
+        badgeText.className = 'text-zinc-300 font-medium';
+        syncStatus.textContent = 'Sync Queue: Unavailable';
+        syncStatus.className = 'text-lg font-bold text-zinc-300 mt-1';
+        syncDetail.textContent = 'Could not reach the local API';
+        syncDetail.className = 'text-xs text-zinc-500 mt-1';
+      }
+    }
+
+    // Fetch File List
+    async function fetchFileList() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/files`);
+        if (!res.ok) throw new Error("Failed to list files");
+        const files = await res.json();
+        dashboardFiles = Array.isArray(files) ? files : [];
+
+        // Update Stats
+        document.getElementById('stat-files-count').textContent = dashboardFiles.length;
+        const totalSize = dashboardFiles.reduce((acc, f) => acc + (f.file_size || 0), 0);
+        document.getElementById('stat-total-size').textContent = formatBytes(totalSize);
+        renderFileList();
+
+      } catch (err) {
+        console.error("File list error:", err);
+        document.getElementById('file-table-body').innerHTML = `<tr><td colspan="6" class="py-8 text-center text-rose-300">Could not load encrypted files. Refresh to retry.</td></tr>`;
+      }
+    }
+
+    function applyFileFilter() {
+      renderFileList();
+    }
+
+    function renderFileList() {
+      const filter = document.getElementById('file-filter').value.trim().toLowerCase();
+      const files = dashboardFiles.filter(file => {
+        const searchable = `${file.file_name || ''} ${file.id || ''}`.toLowerCase();
+        return searchable.includes(filter);
+      });
+      document.getElementById('file-count-badge').textContent = filter ? `${files.length} of ${dashboardFiles.length}` : `${files.length} Registered`;
+      const tbody = document.getElementById('file-table-body');
+      if (files.length === 0) {
+        const emptyMessage = dashboardFiles.length === 0
+          ? 'No encrypted files registered yet. Upload a file above to begin.'
+          : 'No files match that filter.';
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="py-8 text-center text-slate-500">
+                ${emptyMessage}
+              </td>
+            </tr>
+          `;
+          return;
+      }
+
+      tbody.innerHTML = files.map(file => {
+          const dateStr = file.created_at ? new Date(file.created_at).toLocaleString() : 'N/A';
+          const shortId = file.id ? file.id.substring(0, 8) + '...' : 'N/A';
+          const safeName = escapeHTML(file.file_name || 'Unnamed file');
+          const safeID = escapeHTML(file.id || '');
+
+          return `
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-slate-100 flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span class="truncate max-w-[200px]" title="${safeName}">${safeName}</span>
+              </td>
+              <td class="py-3.5 px-4 font-mono text-xs text-slate-400">
+                <span title="${safeID}">${escapeHTML(shortId)}</span>
+              </td>
+              <td class="py-3.5 px-4 font-medium text-slate-300">${formatBytes(file.file_size)}</td>
+              <td class="py-3.5 px-4">
+                <span class="px-2 py-0.5 text-xs rounded bg-slate-800 text-slate-300 border border-slate-700/50 font-mono">${file.total_chunks} chunks</span>
+              </td>
+              <td class="py-3.5 px-4 text-xs text-slate-400">${dateStr}</td>
+              <td class="py-3.5 px-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button 
+                    data-download-id="${safeID}"
+                    class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-semibold transition-all flex items-center gap-1"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Decrypt & Download
+                  </button>
+                  <button 
+                    data-delete-id="${safeID}"
+                    data-delete-name="${safeName}"
+                    class="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-xs transition-all"
+                    title="Delete File & Purge Chunks"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      tbody.querySelectorAll('[data-download-id]').forEach(button => {
+        button.addEventListener('click', () => downloadFile(button.dataset.downloadId));
+      });
+      tbody.querySelectorAll('[data-delete-id]').forEach(button => {
+        button.addEventListener('click', () => deleteFile(button.dataset.deleteId, button.dataset.deleteName));
+      });
+    }
+
+    // Direct Browser Download Handler
+    function downloadFile(fileId) {
+      window.location.href = `/api/v1/files/download/${fileId}`;
+    }
+
+    // Delete File Handler
+    async function deleteFile(fileID, fileName) {
+      if (!confirm(`Are you sure you want to delete '${fileName}' and purge its encrypted chunks?`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/files/delete/${fileID}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error("Delete failed");
+        
+        const data = await res.json();
+        showToast(`Purged file and ${data.purged_chunks} orphaned chunks from disk.`, 'success');
+        fetchFileList();
+      } catch (err) {
+        showToast(`Failed to delete file: ${err.message}`, 'error');
+      }
+    }
+
+    // Upload Drag & Drop Handling
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('dropzone').classList.add('border-indigo-500', 'bg-indigo-950/20');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('dropzone').classList.remove('border-indigo-500', 'bg-indigo-950/20');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('dropzone').classList.remove('border-indigo-500', 'bg-indigo-950/20');
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    }
+
+    // Perform Upload Request
+    function uploadFile(file) {
+      const progressContainer = document.getElementById('upload-progress-container');
+      const filenameLabel = document.getElementById('upload-filename');
+      const statusLabel = document.getElementById('upload-status');
+      const progressBar = document.getElementById('upload-bar');
+
+      filenameLabel.textContent = `${file.name} (${formatBytes(file.size)})`;
+      statusLabel.textContent = "Uploading & Encrypting...";
+      progressBar.style.width = '30%';
+      progressContainer.classList.remove('hidden');
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE}/api/v1/files/upload`, true);
+
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 90);
+          progressBar.style.width = percent + '%';
+        }
+      };
+
+      xhr.onload = function() {
+        if (xhr.status === 201) {
+          progressBar.style.width = '100%';
+          statusLabel.textContent = "Encryption & SQLite Manifest Registration Complete!";
+          showToast(`File '${file.name}' encrypted and stored!`, 'success');
+
+          setTimeout(() => {
+            progressContainer.classList.add('hidden');
+            progressBar.style.width = '0%';
+            document.getElementById('file-input').value = '';
+            refreshDashboard();
+          }, 1200);
+
+        } else {
+          statusLabel.textContent = "Upload Failed";
+          showToast(`Upload error: ${xhr.responseText}`, 'error');
+        }
+      };
+
+      xhr.onerror = function() {
+        statusLabel.textContent = "Network Error";
+        showToast("Network error during file upload", 'error');
+      };
+
+      xhr.send(formData);
+    }
+
+    // Auto-refresh interval (5 seconds)
+    document.addEventListener("DOMContentLoaded", () => {
+      refreshDashboard();
+      setInterval(() => {
+        fetchNodeStatus();
+        fetchSyncStatus();
+        fetchFileList();
+      }, 5000);
+    });
+  </script>
+</body>
+</html>

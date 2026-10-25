@@ -1,0 +1,10 @@
+@"
+node_modules/
+dist/
+bin/
+.auracloud_data/
+.env
+.env.*
+!.env.example
+*.log
+"@ | Set-Content .gitignore

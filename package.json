@@ -1,0 +1,26 @@
+{
+  "name": "auracloud-hybrid",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:engine": "node scripts/build-engine.mjs",
+    "build:app": "tsc -p tsconfig.json",
+    "build": "npm run build:engine && npm run build:app",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "start:hybrid": "npm run build && npm start"
+  },
+  "dependencies": {
+    "@fastify/multipart": "^9.0.3",
+    "better-sqlite3": "^12.2.0",
+    "fastify": "^5.4.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.30",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}
+
